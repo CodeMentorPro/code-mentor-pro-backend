@@ -52,6 +52,9 @@ class Course(SimpleBaseModel):
 
 
 class UserCourse(SimpleBaseModel):
+    class Meta:
+        unique_together = ("user", "course")
+
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="user_courses"
     )
@@ -86,6 +89,35 @@ class Lesson(SimpleBaseModel):
         return f"{self.module} - {self.order}. {self.title}"
 
 
+class UserCourseLesson(SimpleBaseModel):
+    class Meta:
+        unique_together = ("user_course", "lesson")
+
+    STATUS_NOT_VIEWED = "STATUS_NOT_VIEWED"
+    STATUS_VIEWED = "STATUS_VIEWED"
+    STATUS_IN_PROGRESS = "STATUS_IN_PROGRESS"
+    STATUS_COMPLETED = "STATUS_COMPLETED"
+    STATUS_CHOICES = (
+        (STATUS_NOT_VIEWED, "Не просмотрено"),
+        (STATUS_VIEWED, "Просмотрено"),
+        (STATUS_IN_PROGRESS, "В процессе"),
+        (STATUS_COMPLETED, "Завершен"),
+    )
+
+    user_course = models.ForeignKey(
+        UserCourse, on_delete=models.CASCADE, related_name="lessons"
+    )
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_NOT_VIEWED,
+    )
+
+    def __str__(self):
+        return f"{self.user_course} - {self.lesson}"
+
+
 class Material(SimpleBaseModel):
     LANGUAGE_RU = "LANGUAGE_RU"
     LANGUAGE_ENG = "LANGUAGE_ENG"
@@ -114,3 +146,28 @@ class Material(SimpleBaseModel):
 
     def __str__(self):
         return f"{self.title}"
+
+
+class UserCourseLessonMaterial(SimpleBaseModel):
+    class Meta:
+        unique_together = ("user_course_lesson", "material")
+
+    STATUS_NOT_COMPLETED = "STATUS_NOT_COMPLETED"
+    STATUS_COMPLETED = "STATUS_COMPLETED"
+    STATUS_CHOICES = (
+        (STATUS_NOT_COMPLETED, "Не завершено"),
+        (STATUS_COMPLETED, "Завершено"),
+    )
+
+    user_course_lesson = models.ForeignKey(
+        UserCourseLesson, on_delete=models.CASCADE, related_name="materials"
+    )
+    material = models.ForeignKey(Material, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_NOT_COMPLETED,
+    )
+
+    def __str__(self):
+        return f"{self.user_course_lesson} - {self.material}"

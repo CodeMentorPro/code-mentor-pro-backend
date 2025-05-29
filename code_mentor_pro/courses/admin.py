@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from courses.models import Course, Lesson, Material, Module, UserCourse
+from courses.models import (Course, Lesson, Material, Module, UserCourse,
+                            UserCourseLesson, UserCourseLessonMaterial)
 
 
 @admin.register(Course)
@@ -45,3 +46,11 @@ class MaterialAdmin(admin.ModelAdmin): ...
 
 @admin.register(UserCourse)
 class UserCourseAdmin(admin.ModelAdmin): ...
+
+
+@admin.register(UserCourseLesson)
+class UserCourseLessonAdmin(admin.ModelAdmin): ...
+
+
+@admin.register(UserCourseLessonMaterial)
+class UserCourseLessonMaterialAdmin(admin.ModelAdmin): ...

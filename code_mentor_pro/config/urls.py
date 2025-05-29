@@ -61,7 +61,6 @@ if settings.DEBUG:
         path("500/", default_views.server_error),
     ]
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    print(f"{static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)=}")
 
     if "debug_toolbar" in settings.INSTALLED_APPS:
         import debug_toolbar

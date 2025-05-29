@@ -3,7 +3,8 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter, SimpleRouter
 
 from code_mentor_pro.users.api.views import RegistrationView, UserProfileView
-from courses.api.views import CourseDetailView, CourseViewSet, LessonDetailView
+from courses.api.views import (CompleteMaterialView, CourseDetailView,
+                               CourseViewSet, LessonDetailView)
 
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 
@@ -19,5 +20,10 @@ urlpatterns = router.urls + [
         "courses/<slug:course_slug>/lessons/<int:lesson_id>/",
         LessonDetailView.as_view(),
         name="lesson-detail",
+    ),
+    path(
+        "courses/<slug:course_slug>/lessons/<int:lesson_id>/materials/<int:material_id>/complete",
+        CompleteMaterialView.as_view(),
+        name="complete-material",
     ),
 ]
