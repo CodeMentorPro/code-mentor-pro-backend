@@ -1,5 +1,4 @@
-from django.urls import resolve
-from django.urls import reverse
+from django.urls import resolve, reverse
 
 from code_mentor_pro.users.models import User
 
