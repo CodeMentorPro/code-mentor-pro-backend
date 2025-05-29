@@ -5,10 +5,12 @@ from django.db.models import CharField, EmailField, TextField
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from common.models import SimpleBaseModel
+
 from .managers import UserManager
 
 
-class User(AbstractUser):
+class User(AbstractUser, SimpleBaseModel):
     """
     Default custom user model for code_mentor_pro.
     If adding fields that need to be filled at user signup,
