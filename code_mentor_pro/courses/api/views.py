@@ -36,7 +36,7 @@ class CourseViewSet(ReadOnlyModelViewSet):
 
 
 class CourseDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, slug):
         course = get_object_or_404(
@@ -51,20 +51,24 @@ class CourseDetailView(APIView):
             slug=slug,
         )
 
-        user_course_lessons = []
-        user_course = UserCourse.objects.get(user=request.user, course=course)
-        for module in course.modules.all():
-            for lesson in module.lessons.all():
-                if not UserCourseLesson.objects.filter(
-                    user_course=user_course, lesson=lesson
-                ).exists():
-                    _lesson = UserCourseLesson(user_course=user_course, lesson=lesson)
-                    user_course_lessons.append(_lesson)
-        if user_course_lessons:
-            UserCourseLesson.objects.bulk_create(user_course_lessons)
+        if request.user and request.user.is_authenticated:
+            user_course_lessons = []
+            user_course = UserCourse.objects.get(user=request.user, course=course)
+            for module in course.modules.all():
+                for lesson in module.lessons.all():
+                    if not UserCourseLesson.objects.filter(
+                        user_course=user_course, lesson=lesson
+                    ).exists():
+                        _lesson = UserCourseLesson(
+                            user_course=user_course, lesson=lesson
+                        )
+                        user_course_lessons.append(_lesson)
+            if user_course_lessons:
+                UserCourseLesson.objects.bulk_create(user_course_lessons)
 
-        # При входе на курс - зачисляем пользователя
-        course.enroll_user(request.user)
+            # При входе на курс - зачисляем пользователя
+            course.enroll_user(request.user)
+
         serializer = CourseDetailSerializer(course, context={"request": request})
         return Response({"course": serializer.data})
 
