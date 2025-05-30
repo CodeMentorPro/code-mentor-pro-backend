@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from courses.models import (Course, Lesson, Material, Module, UserCourseLesson,
-                            UserCourseLessonMaterial)
+from courses.models import (AnswerOption, Course, Lesson, Material, Module,
+                            Question, Survey, UserAnswer, UserCourseLesson,
+                            UserCourseLessonMaterial, UserCourseSurvey)
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -99,12 +100,68 @@ class MaterialSerializer(serializers.ModelSerializer):
                 ).first()
                 if user_course_lesson_material:
                     return user_course_lesson_material.status
-        return None
+
+
+class AnswerOptionSerializer(serializers.ModelSerializer):
+    selected_before = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnswerOption
+        fields = ["id", "text", "selected_before"]
+
+    def get_selected_before(self, obj):
+        if self.context and "request" in self.context:
+            user = self.context["request"].user
+            if user and user.is_authenticated:
+                return UserAnswer.objects.filter(
+                    user_survey__user_course__user=user, selected_options=obj
+                ).exists()
+        return False
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    options = AnswerOptionSerializer(many=True, read_only=True)
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Question
+        fields = ["id", "text", "is_multiple_choice", "order", "options", "status"]
+
+    def get_status(self, obj):
+        if self.context and "request" in self.context:
+            request = self.context["request"]
+            user = request.user
+            if user and user.is_authenticated:
+                user_answer = UserAnswer.objects.filter(
+                    user_survey__user_course__user=user, question=obj
+                ).first()
+                if user_answer:
+                    return user_answer.status
+
+
+class SurveySerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Survey
+        fields = ["id", "title", "description", "is_active", "questions", "status"]
+
+    def get_status(self, obj):
+        if self.context and "request" in self.context:
+            user = self.context["request"].user
+            if user and user.is_authenticated:
+                user_course_survey: UserCourseSurvey = obj.user_course_surveys.filter(
+                    user_course__user=user
+                ).first()
+                return user_course_survey.status
+        return UserCourseSurvey.STATUS_NOT_COMPLETED_YET
 
 
 class LessonDetailSerializer(serializers.ModelSerializer):
     materials = MaterialSerializer(many=True, read_only=True)
+    surveys = SurveySerializer(many=True, read_only=True)
 
     class Meta:
         model = Lesson
-        fields = ["id", "title", "description", "order", "materials"]
+        fields = ["id", "title", "description", "order", "materials", "surveys"]

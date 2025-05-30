@@ -1,7 +1,9 @@
 from django.contrib import admin
 
-from courses.models import (Course, Lesson, Material, Module, UserCourse,
-                            UserCourseLesson, UserCourseLessonMaterial)
+from courses.models import (AnswerOption, Course, Lesson, Material, Module,
+                            Question, Survey, UserAnswer, UserCourse,
+                            UserCourseLesson, UserCourseLessonMaterial,
+                            UserCourseSurvey)
 
 
 @admin.register(Course)
@@ -15,10 +17,18 @@ class MaterialInline(admin.StackedInline):
     ordering = ["title"]
 
 
+class SurveyInline(admin.TabularInline):
+    model = Lesson.surveys.through  # через промежуточную таблицу
+    extra = 1
+    verbose_name = "Опрос"
+    verbose_name_plural = "Опросы"
+    show_change_link = True  # 🔗 добавляет ссылку на редактирование опроса
+
+
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
     list_display = ["title", "module", "order"]
-    inlines = [MaterialInline]
+    inlines = [MaterialInline, SurveyInline]
     ordering = ["module", "order"]
     list_filter = ["module"]
     search_fields = ["title", "description"]
@@ -54,3 +64,51 @@ class UserCourseLessonAdmin(admin.ModelAdmin): ...
 
 @admin.register(UserCourseLessonMaterial)
 class UserCourseLessonMaterialAdmin(admin.ModelAdmin): ...
+
+
+class AnswerOptionInline(admin.TabularInline):
+    model = AnswerOption
+    extra = 1
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    inlines = [AnswerOptionInline]
+    list_display = ("text", "survey", "is_multiple_choice", "order")
+    list_filter = ("survey",)
+    search_fields = ("text",)
+
+
+class QuestionInline(admin.TabularInline):
+    model = Question
+    extra = 1
+    show_change_link = True  # 🔗 делает ссылку на редактирование вопроса
+
+
+@admin.register(Survey)
+class SurveyAdmin(admin.ModelAdmin):
+    inlines = [QuestionInline]
+    list_display = ("title", "is_active")
+    search_fields = ("title",)
+    list_filter = ("is_active",)
+
+
+@admin.register(AnswerOption)
+class AnswerOptionAdmin(admin.ModelAdmin):
+    list_display = ("text", "question", "is_correct")
+    list_filter = ("question", "is_correct")
+    search_fields = ("text",)
+
+
+@admin.register(UserCourseSurvey)
+class UserCourseSurveyAdmin(admin.ModelAdmin):
+    list_display = ("user_course", "survey", "status", "created_at")
+    list_filter = ("survey",)
+    search_fields = ("user_course__user__username",)
+
+
+@admin.register(UserAnswer)
+class UserAnswerAdmin(admin.ModelAdmin):
+    list_display = ("user_survey", "question")
+    list_filter = ("question__survey",)
+    search_fields = ("user_survey__user__username", "question__text")

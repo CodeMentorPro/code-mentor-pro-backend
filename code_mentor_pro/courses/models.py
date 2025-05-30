@@ -80,6 +80,7 @@ class Lesson(SimpleBaseModel):
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    surveys = models.ManyToManyField("Survey", blank=True, related_name="lessons")
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -171,3 +172,81 @@ class UserCourseLessonMaterial(SimpleBaseModel):
 
     def __str__(self):
         return f"{self.user_course_lesson} - {self.material}"
+
+
+class Survey(SimpleBaseModel):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+
+class Question(SimpleBaseModel):
+    survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="questions"
+    )
+    text = models.TextField()
+    is_multiple_choice = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order"]
+
+
+class AnswerOption(SimpleBaseModel):
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="options"
+    )
+    text = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+
+
+class UserCourseSurvey(SimpleBaseModel):
+    STATUS_NOT_COMPLETED_YET = "STATUS_NOT_COMPLETED_YET"
+    STATUS_COMPLETED_WITH_FAILS = "STATUS_COMPLETED_WITH_FAILS"
+    STATUS_COMPLETED = "STATUS_COMPLETED"
+    STATUS_CHOICES = (
+        (STATUS_NOT_COMPLETED_YET, "Не завершен"),
+        (STATUS_COMPLETED_WITH_FAILS, "Завершен с ошибками"),
+        (STATUS_COMPLETED, "Завершен"),
+    )
+
+    user_course = models.ForeignKey(
+        UserCourse, on_delete=models.CASCADE, related_name="surveys"
+    )
+    survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="user_course_surveys"
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default=STATUS_NOT_COMPLETED_YET,
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("user_course", "survey")
+
+
+class UserAnswer(SimpleBaseModel):
+    STATUS_NOT_COMPLETED_YET = "STATUS_NOT_COMPLETED_YET"
+    STATUS_COMPLETED_WITH_FAILS = "STATUS_COMPLETED_WITH_FAILS"
+    STATUS_COMPLETED = "STATUS_COMPLETED"
+    STATUS_CHOICES = (
+        (STATUS_NOT_COMPLETED_YET, "Не отвечено"),
+        (STATUS_COMPLETED_WITH_FAILS, "Отвечено неверно"),
+        (STATUS_COMPLETED, "Отвечено правильно"),
+    )
+
+    user_survey = models.ForeignKey(
+        UserCourseSurvey, on_delete=models.CASCADE, related_name="answers"
+    )
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_options = models.ManyToManyField(AnswerOption)
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default=STATUS_NOT_COMPLETED_YET,
+    )
+
+    class Meta:
+        unique_together = ("user_survey", "question")
