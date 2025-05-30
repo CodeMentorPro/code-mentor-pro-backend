@@ -154,7 +154,8 @@ class SurveySerializer(serializers.ModelSerializer):
                 user_course_survey: UserCourseSurvey = obj.user_course_surveys.filter(
                     user_course__user=user
                 ).first()
-                return user_course_survey.status
+                if user_course_survey:
+                    return user_course_survey.status
         return UserCourseSurvey.STATUS_NOT_COMPLETED_YET
 
 
@@ -165,3 +166,10 @@ class LessonDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
         fields = ["id", "title", "description", "order", "materials", "surveys"]
+
+
+class CourseProgressSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    slug = serializers.SlugField()
+    progress_percent = serializers.IntegerField()

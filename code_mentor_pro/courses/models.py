@@ -62,6 +62,69 @@ class UserCourse(SimpleBaseModel):
         Course, on_delete=models.CASCADE, related_name="user_courses"
     )
 
+    def get_progress_details(self):
+        """
+        Возвращает прогресс пользователя по курсу:
+        - total_lessons: всего уроков
+        - completed_lessons: завершенные (по статусу или все опросы завершены)
+        - total_surveys: всего опросов
+        - completed_surveys: завершённые пользователем
+        - progress_percent: общий прогресс по урокам и опросам
+        """
+        lessons = Lesson.objects.filter(module__course=self.course).prefetch_related("surveys")
+        total_lessons = lessons.count()
+        completed_lessons = 0
+        total_surveys = 0
+        completed_surveys = 0
+
+        for lesson in lessons:
+            surveys = list(lesson.surveys.all())
+            survey_ids = [s.id for s in surveys]
+
+            # Подсчёт опросов
+            total_surveys += len(survey_ids)
+
+            completed_count = UserCourseSurvey.objects.filter(
+                user_course=self,
+                survey_id__in=survey_ids,
+                status=UserCourseSurvey.STATUS_COMPLETED,
+            ).count()
+            completed_surveys += completed_count
+
+            # Урок считается завершенным если:
+            # - нет опросов и статус lesson == COMPLETED
+            # - или все опросы завершены
+            if not survey_ids:
+                lesson_status = UserCourseLesson.objects.filter(
+                    user_course=self, lesson=lesson,
+                    status=UserCourseLesson.STATUS_COMPLETED,
+                ).exists()
+                if lesson_status:
+                    completed_lessons += 1
+            elif completed_count == len(survey_ids):
+                completed_lessons += 1
+
+        total_steps = total_lessons + total_surveys
+        completed_steps = completed_lessons + completed_surveys
+
+        progress_percent = round(completed_steps / total_steps * 100) if total_steps else 0
+
+        return {
+            "total_lessons": total_lessons,
+            "completed_lessons": completed_lessons,
+            "total_surveys": total_surveys,
+            "completed_surveys": completed_surveys,
+            "progress_percent": progress_percent,
+        }
+
+
+    def get_progress_percent(self):
+        """
+        Возвращает только процент прохождения курса.
+        """
+        details = self.get_progress_details()
+        return details["progress_percent"]
+
 
 class Module(SimpleBaseModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")

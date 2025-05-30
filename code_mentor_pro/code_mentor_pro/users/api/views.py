@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from code_mentor_pro.users.models import User
+from courses.api.serializers import CourseProgressSerializer
+from courses.models import UserCourse
 
 from .serializers import RegistrationSerializer, UserSerializer
 
@@ -46,14 +48,31 @@ class UserProfileView(APIView):
 
     def get(self, request):
         serializer = UserSerializer(request.user, context={"request": request})
-        return Response({"user": serializer.data}, status=status.HTTP_200_OK)
+        user_courses = UserCourse.objects.filter(user=request.user).select_related(
+            "course"
+        )
+
+        progress_data = [
+            {
+                "id": uc.course.id,
+                "title": uc.course.title,
+                "slug": uc.course.slug,
+                "progress_percent": uc.get_progress_percent(),
+            }
+            for uc in user_courses
+        ]
+
+        return Response(
+            {
+                "user": serializer.data,
+                "progress": CourseProgressSerializer(progress_data, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request):
         serializer = UserSerializer(
-            request.user,
-            data=request.data,
-            partial=True,
-            context={"request": request},
+            request.user, data=request.data, partial=True, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
