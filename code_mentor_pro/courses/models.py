@@ -71,7 +71,9 @@ class UserCourse(SimpleBaseModel):
         - completed_surveys: завершённые пользователем
         - progress_percent: общий прогресс по урокам и опросам
         """
-        lessons = Lesson.objects.filter(module__course=self.course).prefetch_related("surveys")
+        lessons = Lesson.objects.filter(module__course=self.course).prefetch_related(
+            "surveys"
+        )
         total_lessons = lessons.count()
         completed_lessons = 0
         total_surveys = 0
@@ -96,7 +98,8 @@ class UserCourse(SimpleBaseModel):
             # - или все опросы завершены
             if not survey_ids:
                 lesson_status = UserCourseLesson.objects.filter(
-                    user_course=self, lesson=lesson,
+                    user_course=self,
+                    lesson=lesson,
                     status=UserCourseLesson.STATUS_COMPLETED,
                 ).exists()
                 if lesson_status:
@@ -107,7 +110,9 @@ class UserCourse(SimpleBaseModel):
         total_steps = total_lessons + total_surveys
         completed_steps = completed_lessons + completed_surveys
 
-        progress_percent = round(completed_steps / total_steps * 100) if total_steps else 0
+        progress_percent = (
+            round(completed_steps / total_steps * 100) if total_steps else 0
+        )
 
         return {
             "total_lessons": total_lessons,
@@ -116,7 +121,6 @@ class UserCourse(SimpleBaseModel):
             "completed_surveys": completed_surveys,
             "progress_percent": progress_percent,
         }
-
 
     def get_progress_percent(self):
         """

@@ -59,7 +59,7 @@ class UserProfileView(APIView):
                 "slug": uc.course.slug,
                 "progress_percent": uc.get_progress_percent(),
             }
-            for uc in user_courses
+            for uc in user_courses.order_by("?")[:3]
         ]
 
         return Response(

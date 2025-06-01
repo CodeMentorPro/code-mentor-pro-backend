@@ -57,7 +57,7 @@ class CourseDetailView(APIView):
 
         if request.user and request.user.is_authenticated:
             user_course_lessons = []
-            user_course = UserCourse.objects.get(user=request.user, course=course)
+            user_course = course.enroll_user(request.user)
             for module in course.modules.all():
                 for lesson in module.lessons.all():
                     if not UserCourseLesson.objects.filter(
@@ -252,3 +252,26 @@ class SaveSurveyAnswersView(APIView):
 
         survey_data = SurveySerializer(survey, context={"request": self.request}).data
         return Response(survey_data, status=status.HTTP_200_OK)
+
+
+class UserProgressDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_courses = UserCourse.objects.select_related("course").filter(user=user)
+
+        progress_data = []
+        for user_course in user_courses:
+            course = user_course.course
+            progress_details = user_course.get_progress_details()
+            progress_data.append(
+                {
+                    "course_id": course.id,
+                    "title": course.title,
+                    "slug": course.slug,
+                    "progress": progress_details,
+                }
+            )
+
+        return Response({"progress": progress_data}, status=status.HTTP_200_OK)

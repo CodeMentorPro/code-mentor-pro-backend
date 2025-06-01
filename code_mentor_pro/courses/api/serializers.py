@@ -1,3 +1,5 @@
+from random import shuffle
+
 from rest_framework import serializers
 
 from courses.models import (AnswerOption, Course, Lesson, Material, Module,
@@ -120,7 +122,7 @@ class AnswerOptionSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
-    options = AnswerOptionSerializer(many=True, read_only=True)
+    options = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -138,9 +140,15 @@ class QuestionSerializer(serializers.ModelSerializer):
                 if user_answer:
                     return user_answer.status
 
+    def get_options(self, obj):
+        options = list(obj.options.all())
+        shuffle(options)
+
+        return AnswerOptionSerializer(options, many=True, context=self.context).data
+
 
 class SurveySerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True, read_only=True)
+    questions = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -157,6 +165,13 @@ class SurveySerializer(serializers.ModelSerializer):
                 if user_course_survey:
                     return user_course_survey.status
         return UserCourseSurvey.STATUS_NOT_COMPLETED_YET
+
+    def get_questions(self, obj):
+        # Получаем все вопросы, перемешиваем
+        questions = list(obj.questions.all())
+        shuffle(questions)
+
+        return QuestionSerializer(questions, many=True, context=self.context).data
 
 
 class LessonDetailSerializer(serializers.ModelSerializer):
