@@ -1,7 +1,8 @@
 from django.contrib import admin
 
-from courses.models import (AnswerOption, Course, Lesson, Material, Module,
-                            Question, Survey, UserAnswer, UserCourse,
+from courses.models import (Achievement, AnswerOption, Course, Lesson,
+                            Material, Module, Question, Survey,
+                            UserAchievement, UserAnswer, UserCourse,
                             UserCourseLesson, UserCourseLessonMaterial,
                             UserCourseSurvey)
 
@@ -112,3 +113,11 @@ class UserAnswerAdmin(admin.ModelAdmin):
     list_display = ("user_survey", "question")
     list_filter = ("question__survey",)
     search_fields = ("user_survey__user__username", "question__text")
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin): ...
+
+
+@admin.register(UserAchievement)
+class UserAchievementAdmin(admin.ModelAdmin): ...

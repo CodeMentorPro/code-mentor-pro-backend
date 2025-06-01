@@ -4,6 +4,8 @@ from django.utils.text import slugify
 from code_mentor_pro.users.models import User
 from common.models import SimpleBaseModel
 
+from .achievements import *
+
 
 class Course(SimpleBaseModel):
     PROGRAMMING_LANGUAGE_PYTHON = "PROGRAMMING_LANGUAGE_PYTHON"

@@ -9,8 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from code_mentor_pro.users.models import User
-from courses.api.serializers import CourseProgressSerializer
-from courses.models import UserCourse
+from courses.api.serializers import (AchievementShortSerializer,
+                                     CourseProgressSerializer)
+from courses.models import Achievement, UserCourse
 
 from .serializers import RegistrationSerializer, UserSerializer
 
@@ -66,6 +67,11 @@ class UserProfileView(APIView):
             {
                 "user": serializer.data,
                 "progress": CourseProgressSerializer(progress_data, many=True).data,
+                "achievements": AchievementShortSerializer(
+                    Achievement.objects.filter(is_active=True).order_by("?")[:6],
+                    many=True,
+                    context={"request": request},
+                ).data,
             },
             status=status.HTTP_200_OK,
         )

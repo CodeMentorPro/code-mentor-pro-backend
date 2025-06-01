@@ -2,8 +2,9 @@ from random import shuffle
 
 from rest_framework import serializers
 
-from courses.models import (AnswerOption, Course, Lesson, Material, Module,
-                            Question, Survey, UserAnswer, UserCourseLesson,
+from courses.models import (Achievement, AnswerOption, Course, Lesson,
+                            Material, Module, Question, Survey,
+                            UserAchievement, UserAnswer, UserCourseLesson,
                             UserCourseLessonMaterial, UserCourseSurvey)
 
 
@@ -188,3 +189,37 @@ class CourseProgressSerializer(serializers.Serializer):
     title = serializers.CharField()
     slug = serializers.SlugField()
     progress_percent = serializers.IntegerField()
+
+
+class AchievementShortSerializer(serializers.ModelSerializer):
+    awarded = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Achievement
+        fields = ["id", "title", "icon", "awarded"]
+
+    def get_awarded(self, obj):
+        if self.context and "request" in self.context:
+            user = self.context["request"].user
+            if user and user.is_authenticated:
+                return UserAchievement.objects.filter(
+                    user=user, achievement=obj
+                ).exists()
+        return False
+
+
+class AchievementFullSerializer(serializers.ModelSerializer):
+    awarded = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Achievement
+        fields = ["id", "title", "icon", "description", "awarded"]
+
+    def get_awarded(self, obj):
+        if self.context and "request" in self.context:
+            user = self.context["request"].user
+            if user and user.is_authenticated:
+                return UserAchievement.objects.filter(
+                    user=user, achievement=obj
+                ).exists()
+        return False

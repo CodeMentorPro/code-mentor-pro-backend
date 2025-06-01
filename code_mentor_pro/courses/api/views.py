@@ -7,14 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from courses.models import (AnswerOption, Course, Lesson, Material, Module,
-                            Question, Survey, UserAnswer, UserCourse,
-                            UserCourseLesson, UserCourseLessonMaterial,
-                            UserCourseSurvey)
+from courses.models import (Achievement, AnswerOption, Course, Lesson,
+                            Material, Module, Question, Survey, UserAnswer,
+                            UserCourse, UserCourseLesson,
+                            UserCourseLessonMaterial, UserCourseSurvey)
 
-from .serializers import (CourseDetailSerializer, CourseSerializer,
-                          CourseSerializerForAuthUser, LessonDetailSerializer,
-                          SurveySerializer)
+from .serializers import (AchievementFullSerializer, CourseDetailSerializer,
+                          CourseSerializer, CourseSerializerForAuthUser,
+                          LessonDetailSerializer, SurveySerializer)
 
 
 class CourseViewSet(ReadOnlyModelViewSet):
@@ -275,3 +275,18 @@ class UserProgressDetailView(APIView):
             )
 
         return Response({"progress": progress_data}, status=status.HTTP_200_OK)
+
+
+class UserAchievementsDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        achievments = Achievement.objects.filter(is_active=True)
+        return Response(
+            {
+                "achievements": AchievementFullSerializer(
+                    achievments, many=True, context={"request": request}
+                ).data
+            },
+            status=status.HTTP_200_OK,
+        )
